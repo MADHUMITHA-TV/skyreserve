@@ -30,6 +30,38 @@ enum TokenType {
   EMAIL_VERIFICATION
 }
 
+enum FlightStatus {
+  SCHEDULED
+  DELAYED
+  CANCELLED
+  COMPLETED
+}
+
+enum AircraftStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
+enum SeatStatus {
+  AVAILABLE
+  LOCKED
+  BOOKED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
 model User {
   id          String    @id @default(cuid())
   firstName   String    @db.VarChar(100)
@@ -53,6 +85,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   refreshTokens RefreshToken[]
+  bookings      Booking[]
 
   @@index([email])
   @@index([role])
@@ -79,4 +112,183 @@ model RefreshToken {
 
   @@index([userId])
   @@index([token])
+}
+
+model Airport {
+  id String @id @default(cuid())
+
+  name    String @db.VarChar(150)
+  code    String @unique @db.VarChar(10)
+  city    String @db.VarChar(100)
+  country String @db.VarChar(100)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  departureFlights Flight[] @relation("DepartureAirport")
+  arrivalFlights   Flight[] @relation("ArrivalAirport")
+
+  @@index([code])
+  @@index([city])
+}
+
+model Airline {
+  id String @id @default(cuid())
+
+  name String @db.VarChar(150)
+  code String @unique @db.VarChar(10)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  aircrafts Aircraft[]
+  flights   Flight[]
+
+  @@index([code])
+}
+
+model Aircraft {
+  id String @id @default(cuid())
+
+  model              String @db.VarChar(100)
+  registrationNumber String @unique @db.VarChar(50)
+
+  totalSeats Int
+
+  status AircraftStatus @default(ACTIVE)
+
+  airlineId String
+
+  airline Airline @relation(fields: [airlineId], references: [id], onDelete: Cascade)
+
+  flights Flight[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([airlineId])
+}
+
+model Flight {
+  id String @id @default(cuid())
+
+  flightNumber String @unique @db.VarChar(20)
+
+  departureTime DateTime
+  arrivalTime   DateTime
+
+  status FlightStatus @default(SCHEDULED)
+
+  airlineId  String
+  aircraftId String
+
+  departureAirportId String
+  arrivalAirportId   String
+
+  airline Airline @relation(fields: [airlineId], references: [id])
+
+  aircraft Aircraft @relation(fields: [aircraftId], references: [id])
+
+  departureAirport Airport @relation("DepartureAirport", fields: [departureAirportId], references: [id])
+
+  arrivalAirport Airport @relation("ArrivalAirport", fields: [arrivalAirportId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  seats    FlightSeat[]
+  bookings Booking[]
+
+  @@index([flightNumber])
+  @@index([departureAirportId])
+  @@index([arrivalAirportId])
+  @@index([airlineId])
+}
+
+model FlightSeat {
+  id String @id @default(cuid())
+
+  seatNumber String @db.VarChar(10)
+
+  status SeatStatus @default(AVAILABLE)
+
+  flightId String
+
+  flight Flight @relation(fields: [flightId], references: [id], onDelete: Cascade)
+
+  bookingId String?
+
+  booking Booking? @relation(fields: [bookingId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([flightId, seatNumber])
+  @@index([flightId])
+}
+
+model Booking {
+  id String @id @default(cuid())
+
+  bookingCode String @unique @db.VarChar(20)
+
+  status BookingStatus @default(PENDING)
+
+  totalAmount Decimal @db.Decimal(10, 2)
+
+  userId String
+
+  flightId String
+
+  user User @relation(fields: [userId], references: [id])
+
+  flight Flight @relation(fields: [flightId], references: [id])
+
+  seats FlightSeat[]
+
+  passengers BookingPassenger[]
+
+  payment Payment?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([flightId])
+}
+
+model BookingPassenger {
+  id String @id @default(cuid())
+
+  firstName String @db.VarChar(100)
+  lastName  String @db.VarChar(100)
+
+  age Int?
+
+  gender Gender?
+
+  bookingId String
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([bookingId])
+}
+
+model Payment {
+  id String @id @default(cuid())
+
+  transactionId String? @unique @db.VarChar(255)
+
+  amount Decimal @db.Decimal(10, 2)
+
+  status PaymentStatus @default(PENDING)
+
+  bookingId String @unique
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
