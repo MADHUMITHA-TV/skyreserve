@@ -1,10 +1,8 @@
-import dotenv from "dotenv";
 import app from "./app.js";
+import config from "../config/index.js";
 
-dotenv.config();
+const { port } = config.env;
 
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`🚀 SkyReserve Server running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`🚀 SkyReserve Server running on port ${port}`);
 });
