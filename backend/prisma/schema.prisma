@@ -6,3 +6,77 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum TokenType {
+  REFRESH
+  PASSWORD_RESET
+  EMAIL_VERIFICATION
+}
+
+model User {
+  id          String    @id @default(cuid())
+  firstName   String    @db.VarChar(100)
+  lastName    String    @db.VarChar(100)
+  email       String    @unique @db.VarChar(255)
+  password    String    @db.VarChar(255)
+  phone       String?   @unique @db.VarChar(20)
+  gender      Gender?
+  dateOfBirth DateTime?
+
+  role   Role       @default(CUSTOMER)
+  status UserStatus @default(ACTIVE)
+
+  emailVerified          Boolean @default(false)
+  emailVerificationToken String? @db.VarChar(255)
+
+  passwordResetToken   String?   @db.VarChar(255)
+  passwordResetExpires DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+}
+
+model RefreshToken {
+  id String @id @default(cuid())
+
+  token String @unique @db.VarChar(500)
+
+  type TokenType @default(REFRESH)
+
+  expiresAt DateTime
+
+  revoked Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
