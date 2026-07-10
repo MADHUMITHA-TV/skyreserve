@@ -13,6 +13,8 @@ import errorHandler from "./middleware/errorHandler.js";
 
 import healthRoutes from "./routes/health.routes.js";
 import apiRoutes from "./routes/index.js";
+import cookieParser from "cookie-parser";
+
 const app = express();
 
 app.use(helmet());
@@ -31,6 +33,7 @@ app.use(rateLimiter);
 app.use(morgan("dev"));
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.use(express.urlencoded({ extended: true }));
 
