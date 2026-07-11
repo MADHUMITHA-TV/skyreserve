@@ -9,8 +9,10 @@ import {
   editFlight,
   removeFlight
 } from "./flight.service.js";
+import asyncHandler from "../../utils/asyncHandler.js";
 
-export const create = async (req, res) => {
+export const create = asyncHandler(async (req, res) => {
+
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
@@ -29,9 +31,11 @@ export const create = async (req, res) => {
       flight
     )
   );
-};
 
-export const findAll = async (req, res) => {
+});
+
+export const findAll = asyncHandler(async (req, res) => {
+
   const flights = await fetchFlights();
 
   return res.status(200).json(
@@ -41,9 +45,10 @@ export const findAll = async (req, res) => {
       flights
     )
   );
-};
 
-export const findOne = async (req, res) => {
+});
+export const findOne = asyncHandler(async (req, res) => {
+
   const flight = await fetchFlight(req.params.id);
 
   return res.status(200).json(
@@ -53,9 +58,11 @@ export const findOne = async (req, res) => {
       flight
     )
   );
-};
 
-export const update = async (req, res) => {
+});
+
+export const update = asyncHandler(async (req, res) => {
+
   const flight = await editFlight(
     req.params.id,
     req.body
@@ -68,9 +75,11 @@ export const update = async (req, res) => {
       flight
     )
   );
-};
 
-export const remove = async (req, res) => {
+});
+
+export const remove = asyncHandler(async (req, res) => {
+
   await removeFlight(req.params.id);
 
   return res.status(200).json(
@@ -79,4 +88,5 @@ export const remove = async (req, res) => {
       "Flight deleted successfully"
     )
   );
-};
+
+});

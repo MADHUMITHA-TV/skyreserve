@@ -1,0 +1,1 @@
+export { default as flightSeatRoutes } from "./flightSeat.routes.js";

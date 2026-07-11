@@ -1,5 +1,7 @@
 import prisma from "../../prisma/client.js";
 
+export default prisma;
+
 export const connectDatabase = async () => {
   await prisma.$connect();
 };

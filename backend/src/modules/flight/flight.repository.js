@@ -62,3 +62,35 @@ export const deleteFlight = async (id) => {
     }
   });
 };
+
+export const getFlightByNumber = async (flightNumber) => {
+  return prisma.flight.findUnique({
+    where: {
+      flightNumber
+    }
+  });
+};
+
+export const getAirlineById = async (id) => {
+  return prisma.airline.findUnique({
+    where: {
+      id
+    }
+  });
+};
+
+export const getAircraftById = async (id) => {
+  return prisma.aircraft.findUnique({
+    where: {
+      id
+    }
+  });
+};
+
+export const getAirportById = async (id) => {
+  return prisma.airport.findUnique({
+    where: {
+      id
+    }
+  });
+};
