@@ -7,6 +7,12 @@ export const createBookingValidator = [
     .isString()
     .withMessage("Flight ID must be a string"),
 
+  body("seatId")
+    .notEmpty()
+    .withMessage("Seat ID is required")
+    .isString()
+    .withMessage("Seat ID must be a string"),
+
   body("passengers")
     .isArray({ min: 1, max: 9 })
     .withMessage("Passengers must contain between 1 and 9 passengers"),

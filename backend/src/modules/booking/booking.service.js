@@ -1,7 +1,9 @@
 import {
   findFlightById,
+  findSeatById,
   createBooking,
   createBookingPassengers,
+  updateSeatBooking,
   getBookingById,
   getBookingsByUserId
 } from "./booking.repository.js";
@@ -16,7 +18,7 @@ import {
   getSeatLockTTL,
   extendSeatLock
 } from "../../utils/redisLock.js";
-
+import { getSeatById } from "../flightSeat/flightSeat.repository.js";
 const generateBookingCode = () => {
   return (
     "BK" +
@@ -31,9 +33,40 @@ export const createNewBooking = async (
   userId,
   bookingData
 ) => {
-  const { flightId, passengers } = bookingData;
+  const {
+  flightId,
+  seatId,
+  passengers
+} = bookingData;
 
   const flight = await findFlightById(flightId);
+
+  const seat = await findSeatById(seatId);
+
+if (!seat) {
+  throw new ApiError(404, "Seat not found");
+}
+
+if (seat.flightId !== flightId) {
+  throw new ApiError(
+    400,
+    "Seat does not belong to this flight"
+  );
+}
+
+if (seat.status !== "AVAILABLE") {
+  throw new ApiError(
+    400,
+    "Seat is not available"
+  );
+}
+
+if (seat.status === "BOOKED") {
+  throw new ApiError(
+    409,
+    "Seat is already booked"
+  );
+}
 
   if (!flight) {
     throw new ApiError(404, "Flight not found");
@@ -85,6 +118,13 @@ export const createNewBooking = async (
           passengerData,
           tx
         );
+        
+
+        await updateSeatBooking(
+  seatId,
+  newBooking.id,
+  tx
+);
 
         // Uncomment ONLY while testing rollback
         //throw new Error("Rollback Test");

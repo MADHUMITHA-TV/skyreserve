@@ -11,11 +11,9 @@ export const getSeatsByFlightId = async (flightId) => {
     where: {
       flightId
     },
-    orderBy: [
-      {
-        seatNumber: "asc"
-      }
-    ]
+    orderBy: {
+      seatNumber: "asc"
+    }
   });
 };
 
@@ -25,11 +23,9 @@ export const getAvailableSeatsByFlightId = async (flightId) => {
       flightId,
       status: "AVAILABLE"
     },
-    orderBy: [
-      {
-        seatNumber: "asc"
-      }
-    ]
+    orderBy: {
+      seatNumber: "asc"
+    }
   });
 };
 
@@ -47,16 +43,28 @@ export const getSeatByFlightAndNumber = async (
   });
 };
 
+// NEW
+export const getSeatById = async (seatId) => {
+  return prisma.flightSeat.findUnique({
+    where: {
+      id: seatId
+    }
+  });
+};
+
+// Updated
 export const updateSeatStatus = async (
   id,
-  status
+  status,
+  bookingId = null
 ) => {
   return prisma.flightSeat.update({
     where: {
       id
     },
     data: {
-      status
+      status,
+      bookingId
     }
   });
 };

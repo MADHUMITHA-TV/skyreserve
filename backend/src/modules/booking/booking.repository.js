@@ -72,3 +72,27 @@ export const getBookingsByUserId = async (userId) => {
     }
   });
 };
+
+export const findSeatById = async (seatId) => {
+  return prisma.flightSeat.findUnique({
+    where: {
+      id: seatId
+    }
+  });
+};
+
+export const updateSeatBooking = async (
+  seatId,
+  bookingId,
+  tx = prisma
+) => {
+  return tx.flightSeat.update({
+    where: {
+      id: seatId
+    },
+    data: {
+      bookingId,
+      status: "BOOKED"
+    }
+  });
+};
