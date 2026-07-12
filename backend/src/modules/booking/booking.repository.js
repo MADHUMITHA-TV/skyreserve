@@ -92,7 +92,68 @@ export const updateSeatBooking = async (
     },
     data: {
       bookingId,
-      status: "BOOKED"
+      status: "LOCKED"
+    }
+  });
+};
+export const cancelBookingTransaction = async (bookingId) => {
+  return prisma.$transaction(async (tx) => {
+    const booking = await tx.booking.update({
+      where: {
+        id: bookingId
+      },
+      data: {
+        status: "CANCELLED"
+      }
+    });
+
+    await tx.flightSeat.updateMany({
+      where: {
+        bookingId
+      },
+      data: {
+        status: "AVAILABLE",
+        bookingId: null
+      }
+    });
+
+    return booking;
+  });
+};
+
+export const getBookingWithUser = async (bookingId) => {
+  return prisma.booking.findUnique({
+    where: {
+      id: bookingId
+    }
+  });
+};
+
+export const updateBookingStatus = async (
+  bookingId,
+  status,
+  tx = prisma
+) => {
+  return tx.booking.update({
+    where: {
+      id: bookingId
+    },
+    data: {
+      status
+    }
+  });
+};
+
+export const getBookingWithSeat = async (
+  bookingId
+) => {
+  return prisma.booking.findUnique({
+    where: {
+      id: bookingId
+    },
+    include: {
+      flight: true,
+      payment: true
     }
   });
 };

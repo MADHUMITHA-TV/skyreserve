@@ -9,7 +9,8 @@ import {
   lockSeat,
   unlockSeat,
   seatLockStatus,
-  refreshLock
+  refreshLock,
+  cancel
 } from "./booking.controller.js";
 
 import { createBookingValidator } from "./booking.validator.js";
@@ -28,7 +29,11 @@ router.get(
   authMiddleware,
   findMyBookings
 );
-
+router.patch(
+  "/:id/cancel",
+  authMiddleware,
+  cancel
+);
 router.get(
   "/:id",
   authMiddleware,
@@ -59,4 +64,9 @@ router.put(
   refreshLock
 );
 
+router.patch(
+  "/:id/cancel",
+  authMiddleware,
+  cancel
+);
 export default router;

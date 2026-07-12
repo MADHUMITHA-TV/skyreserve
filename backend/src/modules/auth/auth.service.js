@@ -63,9 +63,9 @@ export const loginUser = async ({
 
 
   if(!user){
-    throw new Error(
-      "Invalid credentials"
-    );
+    const error = new Error("Invalid credentials");
+  error.statusCode = 401;
+  throw error;
   }
 
 
@@ -77,9 +77,9 @@ export const loginUser = async ({
 
 
   if(!isPasswordValid){
-    throw new Error(
-      "Invalid credentials"
-    );
+    const error = new Error("Invalid credentials");
+error.statusCode = 401;
+throw error;
   }
 
 

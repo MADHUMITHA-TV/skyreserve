@@ -36,7 +36,14 @@ export const create = asyncHandler(async (req, res) => {
 
 export const findAll = asyncHandler(async (req, res) => {
 
-  const flights = await fetchFlights();
+  const flights = await fetchFlights({
+  airlineId: req.query.airlineId,
+  departureAirportId:
+    req.query.departureAirportId,
+  arrivalAirportId:
+    req.query.arrivalAirportId,
+  date: req.query.date
+});
 
   return res.status(200).json(
     new ApiResponse(

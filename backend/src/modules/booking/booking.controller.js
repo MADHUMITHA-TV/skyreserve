@@ -10,7 +10,8 @@ import {
   lockFlightSeat,
   unlockFlightSeat,
   getSeatLockStatus,
-  refreshSeatLock
+  refreshSeatLock,
+  cancelBooking
 } from "./booking.service.js";
 
 export const create = asyncHandler(async (req, res) => {
@@ -122,5 +123,25 @@ export const refreshLock = asyncHandler(
         result.message
       )
     );
+  }
+);
+
+export const cancel = asyncHandler(
+  async (req, res) => {
+
+    const booking =
+      await cancelBooking(
+        req.params.id,
+        req.user
+      );
+
+    return res.status(200).json(
+      new ApiResponse(
+        true,
+        "Booking cancelled successfully",
+        booking
+      )
+    );
+
   }
 );

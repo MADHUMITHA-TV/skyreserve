@@ -12,8 +12,38 @@ export const createFlight = async (data) => {
   });
 };
 
-export const getFlights = async () => {
+export const getFlights = async (filters = {}) => {
+  const where = {};
+
+  if (filters.airlineId) {
+    where.airlineId = filters.airlineId;
+  }
+
+  if (filters.departureAirportId) {
+    where.departureAirportId =
+      filters.departureAirportId;
+  }
+
+  if (filters.arrivalAirportId) {
+    where.arrivalAirportId =
+      filters.arrivalAirportId;
+  }
+
+  if (filters.date) {
+    const start = new Date(filters.date);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(filters.date);
+    end.setHours(23, 59, 59, 999);
+
+    where.departureTime = {
+      gte: start,
+      lte: end
+    };
+  }
+
   return prisma.flight.findMany({
+    where,
     include: {
       airline: true,
       aircraft: true,

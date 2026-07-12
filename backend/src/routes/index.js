@@ -24,7 +24,7 @@ from "../modules/aircraft/aircraft.routes.js";
 import flightRoutes from "../modules/flight/flight.routes.js";
 import { bookingRoutes } from "../modules/booking/index.js";
 import { flightSeatRoutes } from "../modules/flightSeat/index.js";
-
+import paymentRoutes from "../modules/payment/payment.routes.js";
 const router = Router();
 
 
@@ -66,5 +66,8 @@ router.use(
 router.use("/flights", flightRoutes);
 router.use("/bookings", bookingRoutes);
 router.use("/flights", flightSeatRoutes);
-
+router.use(
+  "/payments",
+  paymentRoutes
+);
 export default router;

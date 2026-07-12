@@ -62,6 +62,13 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum PaymentMethod {
+  CARD
+  UPI
+  NET_BANKING
+  WALLET
+}
+
 model User {
   id          String    @id @default(cuid())
   firstName   String    @db.VarChar(100)
@@ -277,17 +284,20 @@ model BookingPassenger {
 }
 
 model Payment {
-  id String @id @default(cuid())
+  id             String   @id @default(cuid())
+  bookingId      String   @unique
 
-  transactionId String? @unique @db.VarChar(255)
+  amount         Decimal
+  currency       String   @default("INR")
 
-  amount Decimal @db.Decimal(10, 2)
+  paymentMethod  PaymentMethod
+  status         PaymentStatus
 
-  status PaymentStatus @default(PENDING)
+  transactionId  String?  @unique
 
-  bookingId String @unique
+  paidAt         DateTime?
 
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking Booking @relation(fields: [bookingId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -10,7 +10,7 @@ import {
 import ApiResponse from "../../utils/ApiResponse.js";
 
 
-export const register = async(req,res)=>{
+export const register = async(req,res,next)=>{
 
   const errors =
     validationResult(req);
@@ -39,31 +39,32 @@ export const register = async(req,res)=>{
 
 
 
-export const login = async(req,res)=>{
+export const login = async (req, res, next) => {
+  try {
 
-  const result =
-    await loginUser(req.body);
+    const result = await loginUser(req.body);
 
+    res.cookie(
+      "refreshToken",
+      result.refreshToken,
+      {
+        httpOnly: true,
+        secure: false,
+        sameSite: "strict"
+      }
+    );
 
-  res.cookie(
-    "refreshToken",
-    result.refreshToken,
-    {
-      httpOnly:true,
-      secure:false,
-      sameSite:"strict"
-    }
-  );
+    delete result.refreshToken;
 
+    return res.status(200).json(
+      new ApiResponse(
+        true,
+        "Login successful",
+        result
+      )
+    );
 
-  delete result.refreshToken;
-
-
-  return res.status(200).json(
-    new ApiResponse(
-      true,
-      "Login successful",
-      result
-    )
-  );
+  } catch (err) {
+    next(err);
+  }
 };

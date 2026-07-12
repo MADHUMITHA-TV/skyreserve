@@ -52,15 +52,17 @@ export const getSeatById = async (seatId) => {
   });
 };
 
-// Updated
+
+
 export const updateSeatStatus = async (
-  id,
+  seatId,
   status,
-  bookingId = null
+  bookingId = null,
+  tx = prisma
 ) => {
-  return prisma.flightSeat.update({
+  return tx.flightSeat.update({
     where: {
-      id
+      id: seatId
     },
     data: {
       status,

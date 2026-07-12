@@ -5,7 +5,9 @@ import {
   createBookingPassengers,
   updateSeatBooking,
   getBookingById,
-  getBookingsByUserId
+  getBookingsByUserId,
+  cancelBookingTransaction,
+  getBookingWithUser
 } from "./booking.repository.js";
 
 import prisma from "../../config/database.js";
@@ -261,4 +263,40 @@ export const refreshSeatLock = async (
   return {
     message: "Seat lock refreshed"
   };
+};
+
+export const cancelBooking = async (
+  bookingId,
+  user
+) => {
+  const booking =
+    await getBookingWithUser(bookingId);
+
+  if (!booking) {
+    throw new ApiError(
+      404,
+      "Booking not found"
+    );
+  }
+
+  if (
+    user.role !== "ADMIN" &&
+    booking.userId !== user.id
+  ) {
+    throw new ApiError(
+      403,
+      "You are not authorized to cancel this booking"
+    );
+  }
+
+  if (booking.status === "CANCELLED") {
+    throw new ApiError(
+      400,
+      "Booking is already cancelled"
+    );
+  }
+
+  return await cancelBookingTransaction(
+    bookingId
+  );
 };

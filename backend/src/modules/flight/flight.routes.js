@@ -41,4 +41,6 @@ router.delete(
   remove
 );
 
+router.get("/", findAll);
+
 export default router;

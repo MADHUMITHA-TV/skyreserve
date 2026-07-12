@@ -10,6 +10,8 @@ import {
   getAirportById
 } from "./flight.repository.js";
 import { generateSeatsForFlight } from "../flightSeat/flightSeat.service.js";
+
+
 export const addFlight = async (flightData) => {
   const existingFlight = await getFlightByNumber(
     flightData.flightNumber
@@ -28,19 +30,8 @@ export const addFlight = async (flightData) => {
 
   return await fetchFlight(flight.id);
 };
-export const fetchFlights = async () => {
-  return getFlights();
-};
 
-export const fetchFlight = async (id) => {
-  const flight = await getFlightById(id);
-
-  if (!flight) {
-    throw new Error("Flight not found");
-  }
-
-  return flight;
-};
+  
 
 export const editFlight = async (id, data) => {
   await fetchFlight(id);
@@ -66,6 +57,22 @@ export const editFlight = async (id, data) => {
   }
 
   return updateFlight(id, data);
+};
+
+export const fetchFlights = async (filters) => {
+  return getFlights(filters);
+};
+
+export const fetchFlight = async (id) => {
+  const flight = await getFlightById(id);
+
+  if (!flight) {
+    const err = new Error("Flight not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  return flight;
 };
 
 export const removeFlight = async (id) => {
