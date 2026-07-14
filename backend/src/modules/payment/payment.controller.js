@@ -6,6 +6,7 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import {
   createNewPayment,
   processPayment,
+  failPayment,
   refundPayment,
   fetchPaymentById,
   fetchPaymentByBookingId,
