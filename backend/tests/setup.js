@@ -2,9 +2,11 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.test" });
 
 import prisma from "../src/config/database.js";
+import redisClient, { connectRedis } from "../src/config/redis.js";
 
 beforeAll(async () => {
   await prisma.$connect();
+  await connectRedis();      // <-- ADD THIS
 });
 
 beforeEach(async () => {
@@ -22,5 +24,8 @@ beforeEach(async () => {
 
 afterAll(async () => {
   await prisma.$disconnect();
- 
+
+  if (redisClient.isOpen) {
+    await redisClient.quit();    // <-- ADD THIS
+  }
 });
