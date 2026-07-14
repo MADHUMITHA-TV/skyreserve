@@ -30,6 +30,7 @@ const router = Router();
  *     summary: Register a new user
  *     tags:
  *       - Authentication
+ *
  *     requestBody:
  *       required: true
  *       content:
@@ -41,54 +42,58 @@ const router = Router();
  *               - lastName
  *               - email
  *               - password
+ *
  *             properties:
  *               firstName:
  *                 type: string
  *                 example: Madhu
+ *
  *               lastName:
  *                 type: string
  *                 example: TV
+ *
  *               email:
  *                 type: string
  *                 example: madhu@test.com
+ *
  *               password:
  *                 type: string
  *                 example: Password@123
  *
  *     responses:
  *       201:
-  description: User registered successfully
-  content:
-    application/json:
-      schema:
-        type: object
-        properties:
-          success:
-            type: boolean
-            example: true
-
-          message:
-            type: string
-            example: User registered successfully
-
-          data:
-            type: object
-            properties:
-              id:
-                type: string
-                example: cm123456
-
-              firstName:
-                type: string
-                example: Madhu
-
-              lastName:
-                type: string
-                example: TV
-
-              email:
-                type: string
-                example: madhu@test.com
+ *         description: User registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *
+ *                 message:
+ *                   type: string
+ *                   example: User registered successfully
+ *
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       example: cm123456
+ *
+ *                     firstName:
+ *                       type: string
+ *                       example: Madhu
+ *
+ *                     lastName:
+ *                       type: string
+ *                       example: TV
+ *
+ *                     email:
+ *                       type: string
+ *                       example: madhu@test.com
  *
  *       400:
  *         description: Validation error
