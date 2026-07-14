@@ -11,7 +11,7 @@ import {
 } from "./payment.repository.js";
 
 import { getBookingById } from "../booking/booking.repository.js";
-
+import { unlockSeat } from "../../utils/redisLock.js";
 /**
  * Create Payment
  */
@@ -158,15 +158,31 @@ if(seat){
 
         // Book all seats belonging to booking
         await tx.flightSeat.updateMany({
-          where: {
-            bookingId: payment.bookingId
-          },
-          data: {
-            status: "BOOKED"
-          }
-        });
+  where: {
+    bookingId: payment.bookingId
+  },
+  data: {
+    status: "BOOKED"
+  }
+});
 
-        return updatedPayment;
+/*
+ * Immediately release Redis seat lock
+ * after successful payment.
+ */
+
+const bookedSeats =
+  await tx.flightSeat.findMany({
+    where: {
+      bookingId: payment.bookingId
+    }
+  });
+
+for (const seat of bookedSeats) {
+  await unlockSeat(seat.id);
+}
+
+return updatedPayment;
       }
     );
 

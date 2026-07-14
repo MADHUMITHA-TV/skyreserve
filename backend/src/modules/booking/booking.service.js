@@ -21,6 +21,8 @@ import {
   extendSeatLock
 } from "../../utils/redisLock.js";
 import { getSeatById } from "../flightSeat/flightSeat.repository.js";
+import { retry } from "../../utils/retry.js";
+
 const generateBookingCode = () => {
   return (
     "BK" +
@@ -170,12 +172,12 @@ export const lockFlightSeat = async (
   seatId,
   userId
 ) => {
-  const locked = await lockSeat(
+  const lock = await lockSeat(
     seatId,
     userId
   );
 
-  if (!locked) {
+  if (!lock) {
     throw new ApiError(
       409,
       "Seat is already locked"
@@ -183,7 +185,8 @@ export const lockFlightSeat = async (
   }
 
   return {
-    message: "Seat locked successfully"
+    message: "Seat locked successfully",
+    token: lock.token
   };
 };
 
@@ -202,14 +205,19 @@ export const unlockFlightSeat = async (
     );
   }
 
-  if (owner !== userId) {
+  if (owner.userId !== userId) {
     throw new ApiError(
       403,
       "You do not own this seat lock"
     );
   }
 
-  await unlockSeat(seatId);
+  await retry(async () => {
+  await unlockSeat(
+    seatId,
+    owner.token
+  );
+});
 
   return {
     message: "Seat unlocked successfully"
@@ -226,13 +234,15 @@ export const getSeatLockStatus = async (
     return {
       locked: false,
       owner: null,
+      token: null,
       ttl: 0
     };
   }
 
   return {
     locked: true,
-    owner,
+    owner: owner.userId,
+    token: owner.token,
     ttl: await getSeatLockTTL(seatId)
   };
 };
@@ -251,7 +261,7 @@ export const refreshSeatLock = async (
     );
   }
 
-  if (owner !== userId) {
+  if (owner.userId !== userId) {
     throw new ApiError(
       403,
       "You do not own this seat lock"
