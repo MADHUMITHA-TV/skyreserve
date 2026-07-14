@@ -158,15 +158,18 @@ CREATE TABLE `BookingPassenger` (
 -- CreateTable
 CREATE TABLE `Payment` (
     `id` VARCHAR(191) NOT NULL,
-    `transactionId` VARCHAR(255) NULL,
-    `amount` DECIMAL(10, 2) NOT NULL,
-    `status` ENUM('PENDING', 'SUCCESS', 'FAILED', 'REFUNDED') NOT NULL DEFAULT 'PENDING',
     `bookingId` VARCHAR(191) NOT NULL,
+    `amount` DECIMAL(65, 30) NOT NULL,
+    `currency` VARCHAR(191) NOT NULL DEFAULT 'INR',
+    `paymentMethod` ENUM('CARD', 'UPI', 'NET_BANKING', 'WALLET') NOT NULL,
+    `status` ENUM('PENDING', 'SUCCESS', 'FAILED', 'REFUNDED') NOT NULL,
+    `transactionId` VARCHAR(191) NULL,
+    `paidAt` DATETIME(3) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `Payment_transactionId_key`(`transactionId`),
     UNIQUE INDEX `Payment_bookingId_key`(`bookingId`),
+    UNIQUE INDEX `Payment_transactionId_key`(`transactionId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -204,4 +207,4 @@ ALTER TABLE `Booking` ADD CONSTRAINT `Booking_flightId_fkey` FOREIGN KEY (`fligh
 ALTER TABLE `BookingPassenger` ADD CONSTRAINT `BookingPassenger_bookingId_fkey` FOREIGN KEY (`bookingId`) REFERENCES `Booking`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Payment` ADD CONSTRAINT `Payment_bookingId_fkey` FOREIGN KEY (`bookingId`) REFERENCES `Booking`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `Payment` ADD CONSTRAINT `Payment_bookingId_fkey` FOREIGN KEY (`bookingId`) REFERENCES `Booking`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
