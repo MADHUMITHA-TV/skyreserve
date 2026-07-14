@@ -16,32 +16,84 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: backend
+
+    services:
+
+      mysql:
+
+        image: mysql:8
+
+        env:
+
+          MYSQL_ROOT_PASSWORD: root
+
+          MYSQL_DATABASE: skyreserve_test
+
+
+        ports:
+
+          - 3306:3306
+
+
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+
+
+    env:
+
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/skyreserve_test
+
 
 
     steps:
+
 
       - name: Checkout repository
         uses: actions/checkout@v4
 
 
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
+
         with:
-          node-version: 20
+
+          node-version: 22
+
           cache: npm
-          cache-dependency-path: backend/package-lock.json
+
 
 
       - name: Install dependencies
+
+        working-directory: backend
+
         run: npm install
 
 
+
       - name: Generate Prisma Client
+
+        working-directory: backend
+
         run: npx prisma generate
 
 
+
+      - name: Run Prisma migrations
+
+        working-directory: backend
+
+        run: npx prisma migrate deploy
+
+
+
       - name: Run Tests
+
+        working-directory: backend
+
         run: npm test
