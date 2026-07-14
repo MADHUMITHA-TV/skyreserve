@@ -27,9 +27,11 @@ jobs:
 
         env:
 
-          MYSQL_ROOT_PASSWORD: root
-
-          MYSQL_DATABASE: skyreserve_test
+          NODE_ENV: test
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/skyreserve_test
+      JWT_SECRET: test_secret_key
+      ACCESS_TOKEN_SECRET: test_access_secret
+      REFRESH_TOKEN_SECRET: test_refresh_secret
 
 
         ports:
