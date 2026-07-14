@@ -1,6 +1,7 @@
 import redis from "../config/redis.js";
 
-const LOCK_TTL = 300; // 5 minutes
+const LOCK_TTL =
+  Number(process.env.SEAT_LOCK_TTL) || 300;// 5 minutes
 
 export const lockSeat = async (seatId, userId) => {
   const key = `seat-lock:${seatId}`;

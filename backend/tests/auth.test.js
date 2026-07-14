@@ -1,80 +1,131 @@
 import request from "supertest";
-import bcrypt from "bcrypt";
 
 import app from "../src/app.js";
 import prisma from "../src/config/database.js";
 
-import { testUser } from "./helpers/testData.js";
-
 describe("Auth API", () => {
 
-  describe("POST /api/v1/auth/register", () => {
+  beforeEach(async () => {
+    await prisma.user.deleteMany();
+  });
 
-    it("should register a new user", async () => {
+  it("should register a new user", async () => {
 
-      const res = await request(app)
-        .post("/api/v1/auth/register")
-        .send(testUser);
+    const res = await request(app)
+      .post("/api/v1/auth/register")
+      .send({
+        firstName: "John",
+        lastName: "Doe",
+        email: "john@test.com",
+        password: "password123"
+      });
 
-      expect(res.statusCode).toBe(201);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.email).toBe(testUser.email);
-
-    });
+    expect(res.statusCode).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.email).toBe("john@test.com");
 
   });
 
-  describe("POST /api/v1/auth/login", () => {
+  it("should not register duplicate email", async () => {
 
-    beforeEach(async () => {
+  await request(app)
+    .post("/api/v1/auth/register")
+    .send({
+      firstName: "John",
+      lastName: "Doe",
+      email: "john@test.com",
+      password: "password123"
+    });
 
-      const hashedPassword = await bcrypt.hash(
-        testUser.password,
-        10
-      );
+  const res = await request(app)
+    .post("/api/v1/auth/register")
+    .send({
+      firstName: "John",
+      lastName: "Doe",
+      email: "john@test.com",
+      password: "password123"
+    });
 
-      await prisma.user.create({
-        data: {
-          firstName: testUser.firstName,
-          lastName: testUser.lastName,
-          email: testUser.email,
-          password: hashedPassword,
-          phone: testUser.phone,
-          role: testUser.role
-        }
+  expect(res.statusCode).toBe(400);
+  expect(res.body.success).toBe(false);
+
+});
+
+  it("should reject invalid registration data", async () => {
+
+    const res = await request(app)
+      .post("/api/v1/auth/register")
+      .send({
+        firstName: "",
+        lastName: "",
+        email: "invalid-email",
+        password: "123"
       });
 
-    });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.success).toBe(false);
 
-    it("should login successfully", async () => {
+  });
 
-      const res = await request(app)
-        .post("/api/v1/auth/login")
-        .send({
-          email: testUser.email,
-          password: testUser.password
-        });
+  it("should login successfully", async () => {
 
-      expect(res.statusCode).toBe(200);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data).toHaveProperty("accessToken");
-      
+    await request(app)
+      .post("/api/v1/auth/register")
+      .send({
+        firstName: "John",
+        lastName: "Doe",
+        email: "john@test.com",
+        password: "password123"
+      });
 
-    });
+    const res = await request(app)
+      .post("/api/v1/auth/login")
+      .send({
+        email: "john@test.com",
+        password: "password123"
+      });
 
-    it("should fail with wrong password", async () => {
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.accessToken).toBeDefined();
+    expect(res.body.data.user.email).toBe("john@test.com");
 
-      const res = await request(app)
-        .post("/api/v1/auth/login")
-        .send({
-          email: testUser.email,
-          password: "WrongPassword"
-        });
+  });
 
-      expect(res.statusCode).toBe(401);
-      expect(res.body.success).toBe(false);
+  it("should reject invalid password", async () => {
 
-    });
+    await request(app)
+      .post("/api/v1/auth/register")
+      .send({
+        firstName: "John",
+        lastName: "Doe",
+        email: "john@test.com",
+        password: "password123"
+      });
+
+    const res = await request(app)
+      .post("/api/v1/auth/login")
+      .send({
+        email: "john@test.com",
+        password: "wrongpassword"
+      });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
+
+  });
+
+  it("should reject unknown email", async () => {
+
+    const res = await request(app)
+      .post("/api/v1/auth/login")
+      .send({
+        email: "unknown@test.com",
+        password: "password123"
+      });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
 
   });
 

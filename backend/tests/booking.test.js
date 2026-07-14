@@ -7,6 +7,7 @@ import prisma from "../src/config/database.js";
 describe("Booking API", () => {
 
   let token;
+  let user;
   let flight;
   let seat;
 
@@ -14,7 +15,7 @@ describe("Booking API", () => {
 
     const password = await bcrypt.hash("Password@123", 10);
 
-    const user = await prisma.user.create({
+    user = await prisma.user.create({
       data: {
         firstName: "Madhu",
         lastName: "TV",
@@ -110,12 +111,11 @@ describe("Booking API", () => {
     expect(res.body.success).toBe(true);
     expect(res.body.data.status).toBe("PENDING");
 
-    const updatedSeat =
-      await prisma.flightSeat.findUnique({
-        where: {
-          id: seat.id
-        }
-      });
+    const updatedSeat = await prisma.flightSeat.findUnique({
+      where: {
+        id: seat.id
+      }
+    });
 
     expect(updatedSeat.status).toBe("LOCKED");
 
@@ -127,9 +127,7 @@ describe("Booking API", () => {
       data: {
         bookingCode: "BK123456",
         totalAmount: 5000,
-        userId: (
-          await prisma.user.findFirst()
-        ).id,
+        userId: user.id,
         flightId: flight.id
       }
     });
@@ -140,6 +138,7 @@ describe("Booking API", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
+    expect(res.body.data.id).toBe(booking.id);
 
   });
 

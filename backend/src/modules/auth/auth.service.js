@@ -22,12 +22,11 @@ export const registerUser = async ({
   const existingUser =
     await findUserByEmail(email);
 
-
-  if (existingUser) {
-    throw new Error(
-      "Email already registered"
-    );
-  }
+if (existingUser) {
+  const err = new Error("Email already registered");
+  err.statusCode = 400;
+  throw err;
+}
 
 
   const hashedPassword =

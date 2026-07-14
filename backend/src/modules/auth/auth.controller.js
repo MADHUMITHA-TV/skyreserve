@@ -10,31 +10,31 @@ import {
 import ApiResponse from "../../utils/ApiResponse.js";
 
 
-export const register = async(req,res,next)=>{
+export const register = async (req, res, next) => {
+  try {
 
-  const errors =
-    validationResult(req);
+    const errors = validationResult(req);
 
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
 
-  if(!errors.isEmpty()){
-    return res.status(400).json({
-      success:false,
-      errors:errors.array()
-    });
+    const user = await registerUser(req.body);
+
+    return res.status(201).json(
+      new ApiResponse(
+        true,
+        "User registered successfully",
+        user
+      )
+    );
+
+  } catch (err) {
+    next(err);
   }
-
-
-  const user =
-    await registerUser(req.body);
-
-
-  return res.status(201).json(
-    new ApiResponse(
-      true,
-      "User registered successfully",
-      user
-    )
-  );
 };
 
 

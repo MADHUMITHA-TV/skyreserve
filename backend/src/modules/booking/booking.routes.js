@@ -64,9 +64,5 @@ router.put(
   refreshLock
 );
 
-router.patch(
-  "/:id/cancel",
-  authMiddleware,
-  cancel
-);
+
 export default router;

@@ -18,42 +18,110 @@ export const addFlight = async (flightData) => {
   );
 
   if (existingFlight) {
-    throw new Error("Flight number already exists");
+    const err = new Error("Flight number already exists");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const airline = await getAirlineById(flightData.airlineId);
+  if (!airline) {
+    const err = new Error("Airline not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const aircraft = await getAircraftById(flightData.aircraftId);
+  if (!aircraft) {
+    const err = new Error("Aircraft not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const departureAirport = await getAirportById(
+    flightData.departureAirportId
+  );
+
+  if (!departureAirport) {
+    const err = new Error("Departure airport not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const arrivalAirport = await getAirportById(
+    flightData.arrivalAirportId
+  );
+
+  if (!arrivalAirport) {
+    const err = new Error("Arrival airport not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (
+    flightData.departureAirportId ===
+    flightData.arrivalAirportId
+  ) {
+    const err = new Error(
+      "Departure and arrival airports cannot be the same"
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (
+    new Date(flightData.arrivalTime) <=
+    new Date(flightData.departureTime)
+  ) {
+    const err = new Error(
+      "Arrival time must be after departure time"
+    );
+    err.statusCode = 400;
+    throw err;
   }
 
   const flight = await createFlight(flightData);
 
   await generateSeatsForFlight(
     flight.id,
-    flight.aircraft.totalSeats
+    aircraft.totalSeats
   );
 
   return await fetchFlight(flight.id);
 };
-
   
 
 export const editFlight = async (id, data) => {
-  await fetchFlight(id);
+  const existingFlight = await fetchFlight(id);
 
-  if (
-    data.departureAirportId &&
-    data.arrivalAirportId &&
-    data.departureAirportId === data.arrivalAirportId
-  ) {
-    throw new Error(
+  const departureAirportId =
+    data.departureAirportId ?? existingFlight.departureAirportId;
+
+  const arrivalAirportId =
+    data.arrivalAirportId ?? existingFlight.arrivalAirportId;
+
+  if (departureAirportId === arrivalAirportId) {
+    const err = new Error(
       "Departure and arrival airports cannot be the same"
     );
+    err.statusCode = 400;
+    throw err;
   }
 
+  const departureTime =
+    data.departureTime ?? existingFlight.departureTime;
+
+  const arrivalTime =
+    data.arrivalTime ?? existingFlight.arrivalTime;
+
   if (
-    data.departureTime &&
-    data.arrivalTime &&
-    new Date(data.arrivalTime) <= new Date(data.departureTime)
+    new Date(arrivalTime) <=
+    new Date(departureTime)
   ) {
-    throw new Error(
+    const err = new Error(
       "Arrival time must be after departure time"
     );
+    err.statusCode = 400;
+    throw err;
   }
 
   return updateFlight(id, data);
