@@ -1,23 +1,20 @@
 import ApiResponse from "../../utils/ApiResponse.js";
+import asyncHandler from "../../utils/asyncHandler.js";
 
 import {
   verifyRefreshToken,
-  revokeToken,
-  generateRefreshToken
+  revokeToken
 } from "./refreshToken.service.js";
 
 import {
   generateAccessToken
 } from "./jwt.util.js";
 
+export const refreshAccessToken = asyncHandler(async (req, res) => {
 
-export const refreshAccessToken = async(req,res)=>{
+  const token = req.cookies.refreshToken;
 
-  const token =
-    req.cookies.refreshToken;
-
-
-  if(!token){
+  if (!token) {
     return res.status(401).json(
       new ApiResponse(
         false,
@@ -26,14 +23,9 @@ export const refreshAccessToken = async(req,res)=>{
     );
   }
 
+  const user = await verifyRefreshToken(token);
 
-  const user =
-    await verifyRefreshToken(token);
-
-
-  const accessToken =
-    generateAccessToken(user);
-
+  const accessToken = generateAccessToken(user);
 
   return res.status(200).json(
     new ApiResponse(
@@ -44,25 +36,17 @@ export const refreshAccessToken = async(req,res)=>{
       }
     )
   );
-};
+});
 
+export const logout = asyncHandler(async (req, res) => {
 
+  const token = req.cookies.refreshToken;
 
-export const logout = async(req,res)=>{
-
-  const token =
-    req.cookies.refreshToken;
-
-
-  if(token){
+  if (token) {
     await revokeToken(token);
   }
 
-
-  res.clearCookie(
-    "refreshToken"
-  );
-
+  res.clearCookie("refreshToken");
 
   return res.status(200).json(
     new ApiResponse(
@@ -70,4 +54,4 @@ export const logout = async(req,res)=>{
       "Logged out successfully"
     )
   );
-};
+});

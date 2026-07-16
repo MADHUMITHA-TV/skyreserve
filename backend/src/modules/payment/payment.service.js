@@ -11,17 +11,46 @@ import {
 } from "./payment.repository.js";
 
 import { getBookingById } from "../booking/booking.repository.js";
-import { unlockSeat } from "../../utils/redisLock.js";
+
+import { forceUnlockSeat } from "../../utils/redisLock.js";
 /**
  * Create Payment
  */
 export const createNewPayment = async (
   bookingId,
-  paymentMethod
+  paymentMethod,
+  idempotencyKey
 ) => {
+  
+   if (!idempotencyKey) {
 
-  const booking = await getBookingById(bookingId);
+  throw new ApiError(
+    400,
+    "Idempotency-Key header is required"
+  );
 
+}
+const existingIdempotentPayment =
+await prisma.payment.findUnique({
+
+  where:{
+    idempotencyKey
+  }
+
+});
+
+
+if(existingIdempotentPayment){
+
+  return existingIdempotentPayment;
+
+}
+
+
+
+  const booking =
+  await getBookingById(bookingId);
+  
   if (!booking) {
     throw new ApiError(
       404,
@@ -55,12 +84,19 @@ export const createNewPayment = async (
     );
   }
 
-  const payment =
+ const payment =
     await createPayment({
+
       bookingId,
+
       amount: booking.totalAmount,
+
       paymentMethod,
-      status: "PENDING"
+
+      status: "PENDING",
+
+      idempotencyKey
+
     });
 
   return payment;
@@ -137,24 +173,8 @@ export const processPayment = async (
           }
         });
 
-        const seat = await tx.flightSeat.findFirst({
-    where:{
-        bookingId: payment.bookingId
-    }
-});
+        
 
-if(seat){
-
-    await tx.flightSeat.update({
-        where:{
-            id: seat.id
-        },
-        data:{
-            status:"BOOKED"
-        }
-    });
-
-}
 
         // Book all seats belonging to booking
         await tx.flightSeat.updateMany({
@@ -179,7 +199,7 @@ const bookedSeats =
   });
 
 for (const seat of bookedSeats) {
-  await unlockSeat(seat.id);
+  await forceUnlockSeat(seat.id);
 }
 
 return updatedPayment;
@@ -258,18 +278,14 @@ export const failPayment = async (
 /**
  * Refund Payment
  */
-export const refundPayment = async (
-  paymentId
-) => {
-
-  const payment =
-    await findPaymentById(paymentId);
+/**
+ * Refund Payment
+ */
+export const refundPayment = async (paymentId) => {
+  const payment = await findPaymentById(paymentId);
 
   if (!payment) {
-    throw new ApiError(
-      404,
-      "Payment not found"
-    );
+    throw new ApiError(404, "Payment not found");
   }
 
   if (payment.status !== "SUCCESS") {
@@ -279,62 +295,59 @@ export const refundPayment = async (
     );
   }
 
-  const result =
-  await prisma.$transaction(
-    async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
 
-      const updatedPayment =
-        await updatePayment(
-          paymentId,
-          {
-            status: "REFUNDED"
-          },
-          tx
-        );
+    // Refund payment
+    const updatedPayment = await updatePayment(
+      paymentId,
+      {
+        status: "REFUNDED"
+      },
+      tx
+    );
 
-      await tx.booking.update({
+    // Cancel booking
+    await tx.booking.update({
+      where: {
+        id: payment.bookingId
+      },
+      data: {
+        status: "CANCELLED"
+      }
+    });
+
+    // Release every booked seat
+    const seats = await tx.flightSeat.findMany({
+      where: {
+        bookingId: payment.bookingId
+      }
+    });
+
+    for (const seat of seats) {
+      await tx.flightSeat.update({
         where: {
-          id: payment.bookingId
+          id: seat.id
         },
         data: {
-          status: "CANCELLED"
+          bookingId: null,
+          status: "AVAILABLE"
         }
       });
 
-      // Find booked seat
-      const seat = await tx.flightSeat.findFirst({
-        where: {
-          bookingId: payment.bookingId
-        }
-      });
-
-      // Release seat
-      if (seat) {
-        await tx.flightSeat.update({
-          where: {
-            id: seat.id
-          },
-          data: {
-            bookingId: null,
-            status: "AVAILABLE"
-          }
-        });
-      }
-
-      return updatedPayment;
+      // Remove Redis lock if it exists
+      await forceUnlockSeat(seat.id);
     }
-  );
+
+    return updatedPayment;
+  });
 
   return result;
 };
 
-
 /**
  * Get Payment
  */
-export const fetchPaymentById = async (
-  paymentId
-) => {
+export const fetchPaymentById = async (paymentId) => {
 
   const payment =
     await findPaymentById(paymentId);
@@ -348,7 +361,6 @@ export const fetchPaymentById = async (
 
   return payment;
 };
-
 
 /**
  * Get Payment by Booking

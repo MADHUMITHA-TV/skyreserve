@@ -159,7 +159,8 @@ describe("Payment API", () => {
       .send({
         transactionId: "TXN999999"
       });
-
+    console.log("Status Code:", res.statusCode);
+  console.log("Response Body:", JSON.stringify(res.body, null, 2));
     expect(res.statusCode).toBe(200);
 
     expect(

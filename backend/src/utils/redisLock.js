@@ -90,3 +90,8 @@ export const extendSeatLock = async (
 
   return await redis.expire(key, seconds);
 };
+
+export const forceUnlockSeat = async (seatId) => {
+  const key = `seat-lock:${seatId}`;
+  return await redis.del(key);
+};

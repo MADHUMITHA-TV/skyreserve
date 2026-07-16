@@ -6,7 +6,7 @@ import {
   findRefreshToken,
   revokeRefreshToken
 } from "./refreshToken.repository.js";
-
+import ApiError from "../../utils/ApiError.js";
 
 export const generateRefreshToken = async(user)=>{
 
@@ -50,16 +50,23 @@ export const verifyRefreshToken = async(token)=>{
     storedToken.revoked
   ){
     throw new Error(
+      401,
       "Invalid refresh token"
     );
   }
 
 
+  try {
   jwt.verify(
     token,
     process.env.JWT_REFRESH_SECRET
   );
-
+} catch {
+  throw new ApiError(
+    401,
+    "Invalid or expired refresh token"
+  );
+}
 
   return storedToken.user;
 };

@@ -9,8 +9,15 @@ import {
 
 import VerifiedRoundedIcon from "@mui/icons-material/VerifiedRounded";
 import EventSeatRoundedIcon from "@mui/icons-material/EventSeatRounded";
+import { useNavigate } from "react-router-dom";
 
-export default function BookingCard({ flight }) {
+import { FARE_PER_PASSENGER } from "../../utils/constants";
+import { formatCurrency } from "../../utils/format";
+
+export default function BookingCard({ flight, availableSeatCount }) {
+  const navigate = useNavigate();
+  const isBookable = flight.status !== "CANCELLED";
+
   return (
     <Paper
       sx={{
@@ -20,105 +27,58 @@ export default function BookingCard({ flight }) {
         top: 110,
       }}
     >
-      <Typography
-        variant="h5"
-        fontWeight={700}
-      >
+      <Typography variant="h5" fontWeight={700}>
         Book this Flight
       </Typography>
 
-      <Typography
-        sx={{
-          mt: 2,
-          color: "text.secondary",
-        }}
-      >
-        Starting From
+      <Typography sx={{ mt: 2, color: "text.secondary" }}>
+        Fare per Passenger
       </Typography>
 
-      <Typography
-        variant="h3"
-        color="primary"
-        fontWeight={700}
-      >
-        ₹{flight.price.toLocaleString()}
+      <Typography variant="h3" color="primary" fontWeight={700}>
+        {formatCurrency(FARE_PER_PASSENGER)}
       </Typography>
 
       <Divider sx={{ my: 3 }} />
 
       <Stack spacing={2}>
-
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-        >
-          <Typography>
-            Cabin
-          </Typography>
-
+        <Stack direction="row" justifyContent="space-between">
+          <Typography>Status</Typography>
           <Chip
-            label="Economy"
-            color="primary"
+            label={flight.status}
+            color={isBookable ? "success" : "error"}
             size="small"
           />
         </Stack>
 
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-        >
-          <Typography>
-            Seats Left
-          </Typography>
+        {typeof availableSeatCount === "number" && (
+          <Stack direction="row" justifyContent="space-between">
+            <Typography>Seats Left</Typography>
+            <Typography fontWeight={600}>{availableSeatCount}</Typography>
+          </Stack>
+        )}
 
-          <Typography fontWeight={600}>
-            {flight.availableSeats}
-          </Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <VerifiedRoundedIcon color="success" />
+          <Typography>Instant Confirmation</Typography>
         </Stack>
 
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-        >
-          <VerifiedRoundedIcon
-            color="success"
-          />
-
-          <Typography>
-            Instant Confirmation
-          </Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <EventSeatRoundedIcon color="primary" />
+          <Typography>Free Seat Selection</Typography>
         </Stack>
-
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-        >
-          <EventSeatRoundedIcon
-            color="primary"
-          />
-
-          <Typography>
-            Free Seat Selection
-          </Typography>
-        </Stack>
-
       </Stack>
 
       <Button
         fullWidth
         size="large"
         variant="contained"
-        sx={{
-          mt: 4,
-          height: 56,
-          borderRadius: 3,
-        }}
+        disabled={!isBookable || availableSeatCount === 0}
+        sx={{ mt: 4, height: 56, borderRadius: 3 }}
+        onClick={() => navigate(`/flights/${flight.id}/seats`)}
       >
-        Continue Booking
+        {availableSeatCount === 0 ? "Fully Booked" : "Continue Booking"}
       </Button>
-
     </Paper>
   );
 }

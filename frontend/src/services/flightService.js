@@ -1,20 +1,40 @@
-import flights from "../mocks/flights";
+import api from "../api/axios";
 
-const delay = (ms) =>
-  new Promise((resolve) =>
-    setTimeout(resolve, ms)
-  );
+// GET /flights?airlineId=&departureAirportId=&arrivalAirportId=&date=
+export async function getFlights(filters = {}) {
+  const params = {};
 
-export const getFlights = async () => {
-  await delay(700);
+  if (filters.airlineId) params.airlineId = filters.airlineId;
+  if (filters.departureAirportId)
+    params.departureAirportId = filters.departureAirportId;
+  if (filters.arrivalAirportId)
+    params.arrivalAirportId = filters.arrivalAirportId;
+  if (filters.date) params.date = filters.date;
 
-  return flights;
-};
+  const { data } = await api.get("/flights", { params });
+  return data.data;
+}
 
-export const getFlightById = async (id) => {
-  await delay(500);
+// GET /flights/:id
+export async function getFlightById(id) {
+  const { data } = await api.get(`/flights/${id}`);
+  return data.data;
+}
 
-  return flights.find(
-    (flight) => flight.id === id
-  );
-};
+// POST /flights (ADMIN)
+export async function createFlight(payload) {
+  const { data } = await api.post("/flights", payload);
+  return data.data;
+}
+
+// PUT /flights/:id (ADMIN)
+export async function updateFlight(id, payload) {
+  const { data } = await api.put(`/flights/${id}`, payload);
+  return data.data;
+}
+
+// DELETE /flights/:id (ADMIN)
+export async function deleteFlight(id) {
+  const { data } = await api.delete(`/flights/${id}`);
+  return data;
+}
