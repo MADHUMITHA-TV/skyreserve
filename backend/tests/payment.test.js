@@ -123,6 +123,7 @@ describe("Payment API", () => {
         "Authorization",
         `Bearer ${token}`
       )
+      .set("Idempotency-Key", "test-key-create-001")
       .send({
         bookingId: booking.id,
         paymentMethod: "UPI"
@@ -144,7 +145,8 @@ describe("Payment API", () => {
           bookingId: booking.id,
           amount: 5000,
           paymentMethod: "UPI",
-          status: "PENDING"
+          status: "PENDING",
+          idempotencyKey: "test-key-complete-001"
         }
       });
 
@@ -202,7 +204,8 @@ describe("Payment API", () => {
           status: "SUCCESS",
           transactionId:
             "TXN111111",
-          paidAt: new Date()
+          paidAt: new Date(),
+          idempotencyKey: "test-key-refund-001"
         }
       });
 
@@ -270,7 +273,8 @@ describe("Payment API", () => {
         bookingId: booking.id,
         amount: 5000,
         paymentMethod: "UPI",
-        status: "PENDING"
+        status: "PENDING",
+        idempotencyKey: "test-key-duplicate-existing"
       }
     });
 
@@ -280,6 +284,7 @@ describe("Payment API", () => {
         "Authorization",
         `Bearer ${token}`
       )
+      .set("Idempotency-Key", "test-key-duplicate-new")
       .send({
         bookingId: booking.id,
         paymentMethod: "UPI"
