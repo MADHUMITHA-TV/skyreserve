@@ -5,7 +5,7 @@
 
 */
 -- AlterTable
-ALTER TABLE `payment` ADD COLUMN `idempotencyKey` VARCHAR(191) NULL;
+ALTER TABLE `Payment` ADD COLUMN `idempotencyKey` VARCHAR(191) NULL;
 
 -- CreateIndex
 CREATE UNIQUE INDEX `Payment_idempotencyKey_key` ON `Payment`(`idempotencyKey`);
