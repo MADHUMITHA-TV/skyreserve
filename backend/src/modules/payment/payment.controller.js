@@ -28,10 +28,14 @@ export const create = asyncHandler(async (req, res) => {
   }
 
   const { bookingId, paymentMethod } = req.body;
+  
+  const idempotencyKey =
+  req.headers["idempotency-key"];
 
   const payment = await createNewPayment(
     bookingId,
-    paymentMethod
+    paymentMethod,
+    idempotencyKey
   );
 
   return res.status(201).json(

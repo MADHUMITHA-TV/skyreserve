@@ -18,11 +18,39 @@ import { forceUnlockSeat } from "../../utils/redisLock.js";
  */
 export const createNewPayment = async (
   bookingId,
-  paymentMethod
+  paymentMethod,
+  idempotencyKey
 ) => {
+  
+   if (!idempotencyKey) {
 
-  const booking = await getBookingById(bookingId);
+  throw new ApiError(
+    400,
+    "Idempotency-Key header is required"
+  );
 
+}
+const existingIdempotentPayment =
+await prisma.payment.findUnique({
+
+  where:{
+    idempotencyKey
+  }
+
+});
+
+
+if(existingIdempotentPayment){
+
+  return existingIdempotentPayment;
+
+}
+
+
+
+  const booking =
+  await getBookingById(bookingId);
+  
   if (!booking) {
     throw new ApiError(
       404,
@@ -56,12 +84,19 @@ export const createNewPayment = async (
     );
   }
 
-  const payment =
+ const payment =
     await createPayment({
+
       bookingId,
+
       amount: booking.totalAmount,
+
       paymentMethod,
-      status: "PENDING"
+
+      status: "PENDING",
+
+      idempotencyKey
+
     });
 
   return payment;

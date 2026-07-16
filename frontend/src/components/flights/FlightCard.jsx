@@ -11,12 +11,21 @@ import {
 
 import FlightTakeoffRoundedIcon from "@mui/icons-material/FlightTakeoffRounded";
 import FlightLandRoundedIcon from "@mui/icons-material/FlightLandRounded";
-import AirlineSeatReclineNormalRoundedIcon from "@mui/icons-material/AirlineSeatReclineNormalRounded";
 
 import { useNavigate } from "react-router-dom";
 
+import { FARE_PER_PASSENGER } from "../../utils/constants";
+import { formatCurrency, formatDuration, formatTime } from "../../utils/format";
+
 export default function FlightCard({ flight }) {
   const navigate = useNavigate();
+
+  const statusColor =
+    flight.status === "CANCELLED"
+      ? "error"
+      : flight.status === "DEPARTED" || flight.status === "COMPLETED"
+      ? "default"
+      : "success";
 
   return (
     <Card
@@ -31,17 +40,12 @@ export default function FlightCard({ flight }) {
       }}
     >
       <CardContent>
-
         <Stack
-          direction={{
-            xs: "column",
-            lg: "row",
-          }}
+          direction={{ xs: "column", lg: "row" }}
           spacing={4}
           justifyContent="space-between"
           alignItems="center"
         >
-
           <Stack
             direction="row"
             spacing={2}
@@ -64,113 +68,72 @@ export default function FlightCard({ flight }) {
 
             <Box>
               <Typography fontWeight={700}>
-                {flight.airline.name}
+                {flight.airline?.name}
               </Typography>
 
               <Typography color="text.secondary">
                 {flight.flightNumber}
               </Typography>
 
-              <Typography
-                variant="body2"
-                color="text.secondary"
-              >
-                {flight.aircraft.model}
+              <Typography variant="body2" color="text.secondary">
+                {flight.aircraft?.model}
               </Typography>
             </Box>
           </Stack>
 
-          <Stack
-            direction="row"
-            spacing={4}
-            alignItems="center"
-          >
+          <Stack direction="row" spacing={4} alignItems="center">
             <Box textAlign="center">
               <Typography variant="h5" fontWeight={700}>
-                {new Date(
-                  flight.departureTime
-                ).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {formatTime(flight.departureTime)}
               </Typography>
 
               <Typography color="text.secondary">
-                {flight.departureAirport.code}
+                {flight.departureAirport?.code}
               </Typography>
             </Box>
 
-            <Stack
-              spacing={1}
-              alignItems="center"
-            >
-              <Typography
-                variant="body2"
-                color="text.secondary"
-              >
-                {flight.duration}
+            <Stack spacing={1} alignItems="center">
+              <Typography variant="body2" color="text.secondary">
+                {formatDuration(flight.departureTime, flight.arrivalTime)}
               </Typography>
 
-              <Divider
-                sx={{
-                  width: 120,
-                }}
-              />
+              <Divider sx={{ width: 120 }} />
 
-              <FlightLandRoundedIcon
-                color="action"
-              />
+              <FlightLandRoundedIcon color="action" />
             </Stack>
 
             <Box textAlign="center">
               <Typography variant="h5" fontWeight={700}>
-                {new Date(
-                  flight.arrivalTime
-                ).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {formatTime(flight.arrivalTime)}
               </Typography>
 
               <Typography color="text.secondary">
-                {flight.arrivalAirport.code}
+                {flight.arrivalAirport?.code}
               </Typography>
             </Box>
           </Stack>
 
-          <Stack
-            spacing={2}
-            alignItems="flex-end"
-          >
-            <Typography
-              variant="h4"
-              color="primary"
-              fontWeight={700}
-            >
-              ₹{flight.price.toLocaleString()}
+          <Stack spacing={2} alignItems="flex-end">
+            <Typography variant="h4" color="primary" fontWeight={700}>
+              {formatCurrency(FARE_PER_PASSENGER)}
+              <Typography component="span" variant="body2" color="text.secondary">
+                {" "}
+                / passenger
+              </Typography>
             </Typography>
 
-            <Chip
-              icon={
-                <AirlineSeatReclineNormalRoundedIcon />
-              }
-              label={`${flight.availableSeats} Seats Left`}
-              color="success"
-            />
+            <Chip label={flight.status} color={statusColor} />
 
             <Button
               variant="contained"
               size="large"
-              onClick={() =>
-                navigate(`/flights/${flight.id}`)
-              }
+              disabled={flight.status === "CANCELLED"}
+              onClick={() => navigate(`/flights/${flight.id}`)}
             >
               View Details
             </Button>
           </Stack>
-
         </Stack>
-
       </CardContent>
     </Card>
   );

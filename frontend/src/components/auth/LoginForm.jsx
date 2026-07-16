@@ -20,99 +20,68 @@ import {
   LoginRounded,
 } from "@mui/icons-material";
 
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 
 import { Formik } from "formik";
 import * as Yup from "yup";
+import toast from "react-hot-toast";
 
 import AuthCard from "./AuthCard";
-import { login } from "../../services/authService";
-import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
-const validationSchema = Yup.object({
-  email: Yup.string()
-    .email("Invalid email")
-    .required("Email is required"),
+import useAuth from "../../hooks/useAuth";
+import { getApiErrorMessage } from "../../api/axios";
 
-  password: Yup.string()
-    .required("Password is required"),
+const validationSchema = Yup.object({
+  email: Yup.string().email("Invalid email").required("Email is required"),
+  password: Yup.string().required("Password is required"),
 });
 
 export default function LoginForm() {
-
-  const [showPassword, setShowPassword] =
-  useState(false);
-
-const [loading, setLoading] =
-  useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
+
+  const redirectTo = location.state?.from?.pathname || "/";
+
   return (
-
     <AuthCard>
-
       <Stack spacing={4}>
-
         <Box>
-
-          <Typography
-            variant="h3"
-            fontWeight={700}
-          >
+          <Typography variant="h3" fontWeight={700}>
             Welcome Back
           </Typography>
 
-          <Typography
-            color="text.secondary"
-            mt={1}
-          >
+          <Typography color="text.secondary" mt={1}>
             Sign in to continue to SkyReserve.
           </Typography>
-
         </Box>
 
         <Formik
-          initialValues={{
-            email: "",
-            password: "",
-            remember: true,
-          }}
-
+          initialValues={{ email: "", password: "", remember: true }}
           validationSchema={validationSchema}
-
           onSubmit={async (values) => {
+            try {
+              setLoading(true);
 
-  try {
+              const user = await login({
+                email: values.email,
+                password: values.password,
+              });
 
-    setLoading(true);
+              toast.success("Login Successful");
 
-    const response =
-      await login(values);
-
-    localStorage.setItem(
-      "token",
-      response.data.accessToken
-    );
-
-    toast.success(
-      "Login Successful"
-    );
-    navigate("/");
-  } catch (error) {
-
-    toast.error(
-      error.response?.data?.message ||
-      "Login Failed"
-    );
-
-  } finally {
-
-    setLoading(false);
-
-  }
-
-}}
+              navigate(
+                user?.role === "ADMIN" ? "/admin" : redirectTo,
+                { replace: true }
+              );
+            } catch (error) {
+              toast.error(getApiErrorMessage(error, "Login Failed"));
+            } finally {
+              setLoading(false);
+            }
+          }}
         >
-
           {({
             values,
             errors,
@@ -120,78 +89,35 @@ const [loading, setLoading] =
             handleChange,
             handleSubmit,
           }) => (
-
-            <Stack
-              spacing={3}
-              component="form"
-              onSubmit={handleSubmit}
-            >
-
+            <Stack spacing={3} component="form" onSubmit={handleSubmit}>
               <TextField
                 fullWidth
                 label="Email Address"
                 name="email"
                 value={values.email}
                 onChange={handleChange}
-                error={
-                  touched.email &&
-                  Boolean(errors.email)
-                }
-                helperText={
-                  touched.email &&
-                  errors.email
-                }
+                error={touched.email && Boolean(errors.email)}
+                helperText={touched.email && errors.email}
               />
 
               <TextField
                 fullWidth
                 label="Password"
                 name="password"
-                type={
-                  showPassword
-                    ? "text"
-                    : "password"
-                }
-
+                type={showPassword ? "text" : "password"}
                 value={values.password}
-
                 onChange={handleChange}
-
-                error={
-                  touched.password &&
-                  Boolean(errors.password)
-                }
-
-                helperText={
-                  touched.password &&
-                  errors.password
-                }
-
+                error={touched.password && Boolean(errors.password)}
+                helperText={touched.password && errors.password}
                 InputProps={{
                   endAdornment: (
-
-                    <InputAdornment
-                      position="end"
-                    >
-
+                    <InputAdornment position="end">
                       <IconButton
-                        onClick={() =>
-                          setShowPassword(
-                            !showPassword
-                          )
-                        }
+                        onClick={() => setShowPassword(!showPassword)}
                       >
-
-                        {showPassword ? (
-                          <VisibilityOff />
-                        ) : (
-                          <Visibility />
-                        )}
-
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
                       </IconButton>
-
                     </InputAdornment>
-
                   ),
                 }}
               />
@@ -201,76 +127,42 @@ const [loading, setLoading] =
                 justifyContent="space-between"
                 alignItems="center"
               >
-
                 <FormControlLabel
                   control={
                     <Checkbox
-                      checked={
-                        values.remember
-                      }
+                      checked={values.remember}
                       name="remember"
-                      onChange={
-                        handleChange
-                      }
+                      onChange={handleChange}
                     />
                   }
                   label="Remember Me"
                 />
-
-                <Link
-                  component={RouterLink}
-                  to="/forgot-password"
-                  underline="none"
-                >
-                  Forgot Password?
-                </Link>
-
               </Stack>
 
               <Button
-  disabled={loading}
+                disabled={loading}
                 fullWidth
                 size="large"
                 variant="contained"
-                startIcon={
-                  <LoginRounded />
-                }
+                startIcon={<LoginRounded />}
                 type="submit"
-                sx={{
-                  height: 56,
-                  borderRadius: 3,
-                }}
+                sx={{ height: 56, borderRadius: 3 }}
               >
                 {loading ? "Signing In..." : "Login"}
               </Button>
-
             </Stack>
-
           )}
-
         </Formik>
 
         <Divider />
 
-        <Typography
-          textAlign="center"
-        >
+        <Typography textAlign="center">
           Don't have an account?{" "}
-
-          <Link
-            component={RouterLink}
-            to="/register"
-            underline="hover"
-          >
+          <Link component={RouterLink} to="/register" underline="hover">
             Create Account
           </Link>
-
         </Typography>
-
       </Stack>
-
     </AuthCard>
-
   );
-
 }
