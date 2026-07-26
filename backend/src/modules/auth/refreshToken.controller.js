@@ -10,6 +10,8 @@ import {
   generateAccessToken
 } from "./jwt.util.js";
 
+import refreshTokenCookieOptions from "../../utils/cookieOptions.js";
+
 export const refreshAccessToken = asyncHandler(async (req, res) => {
 
   const token = req.cookies.refreshToken;
@@ -46,7 +48,7 @@ export const logout = asyncHandler(async (req, res) => {
     await revokeToken(token);
   }
 
-  res.clearCookie("refreshToken");
+  res.clearCookie("refreshToken", refreshTokenCookieOptions);
 
   return res.status(200).json(
     new ApiResponse(

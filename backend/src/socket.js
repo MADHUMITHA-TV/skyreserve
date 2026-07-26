@@ -1,13 +1,16 @@
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 
+import config from "./config/index.js";
+
 let io;
 
 export const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: "*",
-      methods: ["GET", "POST"]
+      origin: config.env.clientUrls,
+      methods: ["GET", "POST"],
+      credentials: true
     }
   });
 
@@ -22,7 +25,7 @@ export const initSocket = (server) => {
     try {
       const decoded = jwt.verify(
         token,
-        process.env.JWT_ACCESS_SECRET
+        config.env.jwt.accessSecret
       );
 
       socket.userId = decoded.id;

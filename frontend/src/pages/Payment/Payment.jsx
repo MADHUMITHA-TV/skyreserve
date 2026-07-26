@@ -59,6 +59,11 @@ export default function Payment() {
     generateMockTransactionId()
   );
 
+  // Generated once per checkout attempt (page load). If handleCreatePayment
+  // is retried due to a network blip, it reuses this same key so the
+  // backend can safely dedupe instead of creating a second payment.
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState(false);
@@ -96,7 +101,7 @@ export default function Payment() {
   const handleCreatePayment = async () => {
     try {
       setProcessing(true);
-      const newPayment = await createPayment(bookingId, method);
+      const newPayment = await createPayment(bookingId, method, idempotencyKey);
       setPayment(newPayment);
     } catch (err) {
       toast.error(getApiErrorMessage(err, "Unable to start payment."));

@@ -66,7 +66,8 @@ export const lockSeat = asyncHandler(
   async (req, res) => {
     const result = await lockFlightSeat(
       req.params.seatId,
-      req.user.id
+      req.user.id,
+      req.body.socketId
     );
 
     return res.status(200).json(
@@ -77,7 +78,6 @@ export const lockSeat = asyncHandler(
     );
   }
 );
-
 export const unlockSeat = asyncHandler(
   async (req, res) => {
     const result = await unlockFlightSeat(

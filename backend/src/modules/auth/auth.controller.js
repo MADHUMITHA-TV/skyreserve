@@ -8,6 +8,7 @@ import {
 } from "./auth.service.js";
 
 import ApiResponse from "../../utils/ApiResponse.js";
+import refreshTokenCookieOptions from "../../utils/cookieOptions.js";
 
 
 export const register = async (req, res, next) => {
@@ -47,11 +48,7 @@ export const login = async (req, res, next) => {
     res.cookie(
       "refreshToken",
       result.refreshToken,
-      {
-        httpOnly: true,
-        secure: false,
-        sameSite: "strict"
-      }
+      refreshTokenCookieOptions
     );
 
     delete result.refreshToken;

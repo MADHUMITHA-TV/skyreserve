@@ -2,8 +2,14 @@ import api from "../api/axios";
 
 // POST /payments - { bookingId, paymentMethod }
 // paymentMethod must be one of CARD | UPI | NET_BANKING | WALLET
-export async function createPayment(bookingId, paymentMethod) {
-  const { data } = await api.post("/payments", { bookingId, paymentMethod });
+// idempotencyKey is sent as a header so retried requests for the same
+// checkout attempt don't create duplicate payments.
+export async function createPayment(bookingId, paymentMethod, idempotencyKey) {
+  const { data } = await api.post(
+    "/payments",
+    { bookingId, paymentMethod },
+    { headers: { "Idempotency-Key": idempotencyKey } }
+  );
   return data.data;
 }
 

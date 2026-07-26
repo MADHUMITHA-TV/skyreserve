@@ -16,6 +16,7 @@ import {
   refreshSeatLock,
 } from "../../services/bookingService";
 import { getApiErrorMessage } from "../../api/axios";
+import useSocket from "../../hooks/useSocket";
 
 import { Box, Container, Grid, Stack, Alert } from "@mui/material";
 
@@ -27,6 +28,7 @@ const LOCK_TTL_SECONDS = 120; // mirrors the backend's redisLock TTL
 export default function SeatSelection() {
   const { id: flightId } = useParams();
   const navigate = useNavigate();
+  const { socket, socketId } = useSocket();
 
   const [seats, setSeats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +58,24 @@ export default function SeatSelection() {
   useEffect(() => {
     loadSeats();
   }, [loadSeats]);
+
+  // If a seat gets released elsewhere (e.g. someone else's connection
+  // dropped, or their hold expired) refresh the seat map so it shows up
+  // as available again without the traveller needing to reload the page.
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleSeatReleased = ({ seatIds }) => {
+      if (!seatIds?.length) return;
+      loadSeats();
+    };
+
+    socket.on("seat:released", handleSeatReleased);
+
+    return () => {
+      socket.off("seat:released", handleSeatReleased);
+    };
+  }, [socket, loadSeats]);
 
   const stopTimers = () => {
     if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
@@ -109,7 +129,7 @@ export default function SeatSelection() {
         await unlockSeat(lockedSeatRef.current).catch(() => {});
       }
 
-      await lockSeat(seat.id);
+      await lockSeat(seat.id, socketId);
 
       lockedSeatRef.current = seat.id;
       setSelectedSeat(seat);

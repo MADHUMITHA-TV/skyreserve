@@ -7,6 +7,7 @@ import {
   revokeRefreshToken
 } from "./refreshToken.repository.js";
 import ApiError from "../../utils/ApiError.js";
+import config from "../../config/index.js";
 
 export const generateRefreshToken = async(user)=>{
 
@@ -15,10 +16,10 @@ export const generateRefreshToken = async(user)=>{
       {
         id:user.id
       },
-      process.env.JWT_REFRESH_SECRET,
+      config.env.jwt.refreshSecret,
       {
         expiresIn:
-          process.env.JWT_REFRESH_EXPIRES
+          config.env.jwt.refreshExpiresIn
       }
     );
 
@@ -59,7 +60,7 @@ export const verifyRefreshToken = async(token)=>{
   try {
   jwt.verify(
     token,
-    process.env.JWT_REFRESH_SECRET
+    config.env.jwt.refreshSecret
   );
 } catch {
   throw new ApiError(

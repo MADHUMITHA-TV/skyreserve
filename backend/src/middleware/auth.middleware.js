@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 
 import ApiResponse from "../utils/ApiResponse.js";
+import config from "../config/index.js";
 
 
 const authMiddleware = async(req,res,next)=>{
@@ -33,7 +34,7 @@ const authMiddleware = async(req,res,next)=>{
     const decoded =
       jwt.verify(
         token,
-        process.env.JWT_ACCESS_SECRET
+        config.env.jwt.accessSecret
       );
 
 

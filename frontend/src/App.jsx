@@ -12,6 +12,7 @@ import Admin from "./pages/Admin/Admin";
 import NotFound from "./pages/NotFound/NotFound";
 
 import AuthLayout from "./layouts/AuthLayout";
+import AdminLayout from "./layouts/AdminLayout";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 
@@ -39,9 +40,11 @@ function App() {
         <Route path="/profile" element={<Profile />} />
       </Route>
 
-      {/* Requires an authenticated ADMIN */}
+      {/* Requires an authenticated ADMIN — gets its own dedicated layout */}
       <Route element={<AdminRoute />}>
-        <Route path="/admin" element={<Admin />} />
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<Admin />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<NotFound />} />

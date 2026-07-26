@@ -2,8 +2,8 @@ import api from "../api/axios";
 
 // POST /bookings/lock/:seatId - places a short-lived Redis lock on a seat
 // so two people can't select it at once while one of them is checking out.
-export async function lockSeat(seatId) {
-  const { data } = await api.post(`/bookings/lock/${seatId}`);
+export async function lockSeat(seatId, socketId) {
+  const { data } = await api.post(`/bookings/lock/${seatId}`, { socketId });
   return data;
 }
 

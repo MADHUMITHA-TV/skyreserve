@@ -170,11 +170,13 @@ export const fetchBookingById = async (bookingId) => {
 
 export const lockFlightSeat = async (
   seatId,
-  userId
+  userId,
+  socketId
 ) => {
   const lock = await lockSeat(
     seatId,
-    userId
+    userId,
+    socketId
   );
 
   if (!lock) {
@@ -189,7 +191,6 @@ export const lockFlightSeat = async (
     token: lock.token
   };
 };
-
 export const unlockFlightSeat = async (
   seatId,
   userId

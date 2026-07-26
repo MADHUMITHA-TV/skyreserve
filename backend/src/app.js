@@ -14,6 +14,7 @@ import errorHandler from "./middleware/errorHandler.js";
 import healthRoutes from "./routes/health.routes.js";
 import apiRoutes from "./routes/index.js";
 import cookieParser from "cookie-parser";
+import config from "./config/index.js";
 
 const app = express();
 
@@ -21,7 +22,16 @@ app.use(helmet());
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+      // Allow non-browser requests (curl, server-to-server, health checks)
+      if (!origin) return callback(null, true);
+
+      if (config.env.clientUrls.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
