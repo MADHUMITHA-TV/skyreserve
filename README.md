@@ -32,10 +32,25 @@ SkyReserve is a full-stack airline reservation and management system. Users can 
 
 | | |
 |---|---|
-| **Home** ![Home](docs/screenshots/home.png) | **Flight Search** ![Flight Search](docs/screenshots/flight-search.png) |
-| **Seat Selection** ![Seat Selection](docs/screenshots/seat-selection.png) | **Payment** ![Payment](docs/screenshots/payment.png) |
-| **My Bookings** ![My Bookings](docs/screenshots/my-bookings.png) | **Admin Dashboard** ![Admin Dashboard](docs/screenshots/admin-dashboard.png) |
+| Home | Flight Search |
+|---|---|
+| ![Home](docs/screenshots/home.png) | ![Flight Search](docs/screenshots/flight.png) |
 
+| Seat Selection | Payment |
+|---|---|
+| ![Seat Selection](docs/screenshots/seat.png) | ![Payment](docs/screenshots/payment.png) |
+
+| My Bookings | Admin — Users |
+|---|---|
+| ![My Bookings](docs/screenshots/booking.png) | ![Admin Users](docs/screenshots/Admin_user.png) |
+
+| Admin — Flights | Admin — Airports |
+|---|---|
+| ![Admin Flights](docs/screenshots/Admin_flight.png) | ![Admin Airports](docs/screenshots/Admin_airport.png) |
+
+| Admin — Airlines | Admin — Aircraft |
+|---|---|
+| ![Admin Airlines](docs/screenshots/Admin_airline.png) | ![Admin Aircraft](docs/screenshots/Admin_aircraft.png) |
 ---
 
 ## Highlights
