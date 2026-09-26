@@ -62,6 +62,24 @@ This isn't just a CRUD app — a few pieces were specifically built to handle re
 - **Atomic booking transactions** — booking creation, passenger records, and seat status updates all happen inside a single Prisma transaction, so a failure partway through can't leave the database in an inconsistent state.
 - **JWT access + refresh token flow** — short-lived (15 min) access tokens paired with a 7-day refresh token delivered via an httpOnly cookie, with a single-flight refresh queue on the frontend so concurrent 401s don't trigger multiple refresh requests.
 
+## AWS Deployment & Load Testing
+
+To validate the seat-locking and payment logic under real concurrent load — not just unit tests — the backend was also deployed to AWS and load tested independently of the Render/Vercel production stack described below.
+
+**Infrastructure:** EC2 (t3.micro) for the application server and RDS MySQL (db.t4g.micro) for the database, with IAM and security groups configured so RDS only accepts inbound traffic from the EC2 instance's own security group — not the public internet.
+
+**Load testing:** The full booking flow (seat lock → create booking → create payment → complete payment) was tested with [k6](https://k6.io), ramping from 50 to 500 concurrent virtual users against the live endpoints.
+
+- **Bottleneck found:** Prisma's default connection pool (3 connections) caused cascading timeouts under load, with p95 latency around 2.3s.
+- **Fix:** Raising `connection_limit` to 20 on the database connection string dropped p95 latency to the 300–700ms range under the same load.
+- **Concurrency safety validated:** A dedicated contention test — 50 concurrent requests racing to lock the *same* seat — confirmed the Redis-based lock correctly allows exactly one winner every time, with zero double-bookings.
+
+Scripts used for this are in [`load-testing/`](./load-testing):
+- `booking-load-test.js` — staged 50→200→500 VU load test of the full booking flow
+- `double-booking-test.js` — concurrent single-seat contention test
+- `backend/prisma/load-test-seed.js` — seeds a large seat inventory for load testing
+- `backend/prisma/reset-load-test-seats.js` — resets seat inventory between test runs
+
 ## Tech Stack
 
 **Backend**
@@ -88,6 +106,7 @@ This isn't just a CRUD app — a few pieces were specifically built to handle re
 - Backend: [Render](https://render.com)
 - Database: [Aiven](https://aiven.io) (managed MySQL)
 - Cache / locking: [Upstash](https://upstash.com) (managed Redis)
+- Load-tested separately on: AWS EC2 + RDS (see [AWS Deployment & Load Testing](#aws-deployment--load-testing) above)
 
 ## Features
 
@@ -102,6 +121,7 @@ This isn't just a CRUD app — a few pieces were specifically built to handle re
 - Admin dashboard — manage airlines, aircraft, airports, flights, and users
 - Rate limiting, Helmet security headers, centralized error handling
 - CI pipeline (GitHub Actions) running the full test suite against real MySQL + Redis services on every push
+- Load tested on AWS with k6 (50–500 concurrent users); connection-pool bottleneck identified and fixed; zero double-bookings verified under concurrent contention
 
 ## Project Structure
 
@@ -116,8 +136,12 @@ skyreserve/
 │   │   ├── config/           # env, database, redis
 │   │   ├── utils/             # redis locking, retry logic, cookie options, etc.
 │   │   └── socket.js          # Socket.IO server + auth
-│   ├── prisma/                 # schema, migrations, seed script
+│   ├── prisma/                 # schema, migrations, seed script,
+│   │                            # load-test-seed.js, reset-load-test-seats.js
 │   └── tests/                   # Jest + Supertest suites
+├── load-testing/                 # k6 scripts for AWS load testing
+│   ├── booking-load-test.js
+│   └── double-booking-test.js
 └── frontend/
     └── src/
         ├── pages/              # Home, Flights, SeatSelection, Booking, Payment,
@@ -182,12 +206,27 @@ npm test
 
 Requires a running MySQL and Redis instance (see `.env.test` for test DB config).
 
+### 5. Load testing (optional)
+
+Requires [k6](https://k6.io/docs/get-started/installation/) installed locally and the backend deployed somewhere reachable (e.g. AWS EC2).
+
+```bash
+cd backend
+node prisma/load-test-seed.js   # seeds a large seat inventory on a dedicated test flight
+cd ../load-testing
+k6 run booking-load-test.js     # full booking-flow load test (50→200→500 VUs)
+k6 run double-booking-test.js   # concurrent single-seat contention test
+```
+
+Run `node prisma/reset-load-test-seats.js` between runs to reset seat inventory back to available.
+
 ## Deployment Notes
 
 - Backend and frontend are deployed separately (Render + Vercel), so **CORS is environment-driven** — set `CLIENT_URL` on the backend to your deployed frontend's origin.
 - Refresh-token cookies switch to `secure: true` / `sameSite: "none"` automatically in production (`NODE_ENV=production`) to work across the two separate domains.
 - The frontend needs `VITE_API_BASE_URL` and `VITE_SOCKET_URL` set at **build time** (Vite bakes these in), pointing at the deployed backend.
 - A `vercel.json` rewrite rule is required for client-side routing (React Router) to work correctly on direct navigation/refresh.
+- The AWS EC2/RDS deployment used for load testing is a separate environment from the Render/Vercel/Aiven/Upstash production stack — it exists to validate infrastructure-level scaling behavior (connection pooling, distributed locking under real network conditions) rather than to serve production traffic.
 
 ## Possible Future Improvements
 
