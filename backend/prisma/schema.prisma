@@ -94,6 +94,10 @@ model User {
   refreshTokens RefreshToken[]
   bookings      Booking[]
 
+  agentConversations AgentConversation[]
+  agentToolCalls     AgentToolCall[]
+  policySupportLogs  PolicySupportLog[]
+
   @@index([email])
   @@index([role])
   @@index([status])
@@ -305,4 +309,138 @@ model Payment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+// ---------------------------------------------------------------------
+// Conversational booking agent — chat sessions + tool-call audit log.
+// Added for the /api/agent/chat feature. See agent.tools.js for the
+// tool schemas these entries correspond to.
+// ---------------------------------------------------------------------
+
+enum ToolCallStatus {
+  SUCCESS
+  ERROR
+}
+
+model AgentConversation {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Set once the agent creates a booking in this conversation, so an
+  // eval script can quickly find "conversations that resulted in a
+  // booking" vs. "conversations that didn't" without joining tool calls.
+  resultingBookingId String?
+
+  // Gemini's own conversation format (contents: [{role, parts}]),
+  // persisted so multi-turn context survives between HTTP requests —
+  // the Gemini API itself is stateless per call. Swapping LLM providers
+  // later means this shape changes too, which is expected and fine;
+  // it's an implementation detail of agent.llm.js, not a public contract.
+  historyJson Json?
+
+  // When the agent wants to call a SENSITIVE_TOOLS tool (confirm_payment,
+  // cancel_booking), execution pauses here instead of running immediately.
+  // Shape: { toolName, args, functionCallId }. Cleared once the user
+  // explicitly confirms or declines. See agent.orchestrator.js.
+  pendingActionJson Json?
+
+  startedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  toolCalls AgentToolCall[]
+
+  @@index([userId])
+  @@index([startedAt])
+}
+
+model AgentToolCall {
+  id String @id @default(cuid())
+
+  conversationId String
+  conversation   AgentConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  // Denormalized alongside conversationId so eval queries like "all of
+  // this user's tool calls across every conversation" don't need a join.
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  toolName String @db.VarChar(100)
+
+  // Exact arguments the LLM produced, and exactly what came back from
+  // the real endpoint — this pairing is the reasoning trace.
+  input  Json
+  output Json?
+
+  status       ToolCallStatus
+  errorMessage String?        @db.Text
+
+  durationMs Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId])
+  @@index([userId])
+  @@index([toolName])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------
+// RAG support chatbot — policy document chunks + their embeddings.
+// No dedicated vector DB: the corpus is small (a few policy docs), so
+// embeddings are stored as JSON and compared with brute-force cosine
+// similarity in Node at query time (see policy.retriever.js). Revisit
+// this if the corpus grows into the thousands of chunks.
+// ---------------------------------------------------------------------
+
+model PolicyChunk {
+  id String @id @default(cuid())
+
+  // Which source file this came from, e.g. "baggage-policy.md" — lets
+  // an eval set check retrieval quality per-policy-area.
+  source String
+
+  // The "## Heading" this chunk falls under, kept alongside the content
+  // both for citation ("According to the Baggage Policy > Excess Baggage
+  // Charges...") and because prepending it to the embedded text improves
+  // retrieval on heading-like queries.
+  sectionTitle String?
+
+  chunkIndex Int
+  content    String @db.Text
+
+  // 384-dim vector from Xenova/all-MiniLM-L6-v2, stored as a plain JSON
+  // array (MySQL has no native vector type).
+  embedding Json
+
+  createdAt DateTime @default(now())
+
+  @@index([source])
+}
+
+// ---------------------------------------------------------------------
+// RAG support chatbot — one row per question asked, for the same
+// eval-set purpose as AgentToolCall: lets you check retrieval quality
+// (which chunks got pulled) against the answer that was actually given.
+// ---------------------------------------------------------------------
+
+model PolicySupportLog {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  question String @db.Text
+
+  // IDs of the PolicyChunk rows retrieval selected for this question, in
+  // rank order — lets an eval script check "did retrieval pick the right
+  // chunks" separately from "was the generated answer good."
+  retrievedChunkIds Json
+
+  answer String @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }

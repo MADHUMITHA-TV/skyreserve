@@ -19,8 +19,12 @@ import Register from "./pages/Register/Register";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import AdminRoute from "./routes/AdminRoute";
 
+import AgentChatWidget from "./components/agent/AgentChatWidget";
+
 function App() {
   return (
+    <>
+    <AgentChatWidget />
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/flights" element={<Flights />} />
@@ -49,6 +53,7 @@ function App() {
 
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </>
   );
 }
 

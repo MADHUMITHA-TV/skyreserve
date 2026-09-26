@@ -13,6 +13,15 @@ import {
   fetchAllPayments
 } from "./payment.service.js";
 
+import { fetchBookingById } from "../booking/booking.service.js";
+
+/** Throws-free ownership check helper — returns true if allowed. Kept
+ * local to this controller since payment.service.js itself does not
+ * check ownership (see docs/AI_FEATURES.md, "Known gaps"). */
+function isOwnerOrAdmin(booking, user) {
+  return booking.userId === user.id || user.role === "ADMIN";
+}
+
 /**
  * Create Payment
  */
@@ -28,7 +37,14 @@ export const create = asyncHandler(async (req, res) => {
   }
 
   const { bookingId, paymentMethod } = req.body;
-  
+
+  const booking = await fetchBookingById(bookingId);
+  if (!isOwnerOrAdmin(booking, req.user)) {
+    return res.status(403).json(
+      new ApiResponse(false, "This booking does not belong to you")
+    );
+  }
+
   const idempotencyKey =
   req.headers["idempotency-key"];
 
@@ -55,6 +71,14 @@ export const pay = asyncHandler(async (req, res) => {
 
   const { transactionId } = req.body;
 
+  const existingPayment = await fetchPaymentById(req.params.id);
+  const booking = await fetchBookingById(existingPayment.bookingId);
+  if (!isOwnerOrAdmin(booking, req.user)) {
+    return res.status(403).json(
+      new ApiResponse(false, "This payment does not belong to you")
+    );
+  }
+
   const payment = await processPayment(
     req.params.id,
     transactionId
@@ -74,6 +98,14 @@ export const pay = asyncHandler(async (req, res) => {
  * Refund Payment
  */
 export const refund = asyncHandler(async (req, res) => {
+
+  const existingPayment = await fetchPaymentById(req.params.id);
+  const booking = await fetchBookingById(existingPayment.bookingId);
+  if (!isOwnerOrAdmin(booking, req.user)) {
+    return res.status(403).json(
+      new ApiResponse(false, "This payment does not belong to you")
+    );
+  }
 
   const payment = await refundPayment(
     req.params.id
@@ -98,6 +130,13 @@ export const findOne = asyncHandler(async (req, res) => {
     req.params.id
   );
 
+  const booking = await fetchBookingById(payment.bookingId);
+  if (!isOwnerOrAdmin(booking, req.user)) {
+    return res.status(403).json(
+      new ApiResponse(false, "This payment does not belong to you")
+    );
+  }
+
   return res.status(200).json(
     new ApiResponse(
       true,
@@ -112,6 +151,13 @@ export const findOne = asyncHandler(async (req, res) => {
  * Get Payment using Booking ID
  */
 export const findByBooking = asyncHandler(async (req, res) => {
+
+  const booking = await fetchBookingById(req.params.bookingId);
+  if (!isOwnerOrAdmin(booking, req.user)) {
+    return res.status(403).json(
+      new ApiResponse(false, "This booking does not belong to you")
+    );
+  }
 
   const payment =
     await fetchPaymentByBookingId(

@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import authMiddleware from "../../middleware/auth.middleware.js";
+import authorizeRoles from "../../middleware/role.middleware.js";
 
 import {
   create,
@@ -268,6 +269,7 @@ router.get(
 router.get(
   "/",
   authMiddleware,
+  authorizeRoles("ADMIN"),
   findAll
 );
 

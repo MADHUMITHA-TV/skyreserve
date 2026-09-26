@@ -25,6 +25,9 @@ import flightRoutes from "../modules/flight/flight.routes.js";
 import { bookingRoutes } from "../modules/booking/index.js";
 import { flightSeatRoutes } from "../modules/flightSeat/index.js";
 import paymentRoutes from "../modules/payment/payment.routes.js";
+import agentRoutes from "../modules/agent/agent.routes.js";
+import policyRoutes from "../modules/policy/policy.routes.js";
+import summaryRoutes from "../modules/summary/summary.routes.js";
 const router = Router();
 
 
@@ -70,4 +73,7 @@ router.use(
   "/payments",
   paymentRoutes
 );
+router.use("/agent", agentRoutes);
+router.use("/support", policyRoutes);
+router.use("/bookings-summary", summaryRoutes);
 export default router;

@@ -27,7 +27,13 @@ const env = {
 
   redisUrl: process.env.REDIS_URL || "redis://127.0.0.1:6379",
 
-  seatLockTtl: Number(process.env.SEAT_LOCK_TTL) || 300
+  seatLockTtl: Number(process.env.SEAT_LOCK_TTL) || 300,
+
+  agent: {
+    geminiApiKey: process.env.GEMINI_API_KEY,
+    modelName: process.env.AGENT_MODEL_NAME || "gemini-2.5-flash",
+    maxTurns: Number(process.env.AGENT_MAX_TURNS) || 6
+  }
 };
 
 export default Object.freeze(env);

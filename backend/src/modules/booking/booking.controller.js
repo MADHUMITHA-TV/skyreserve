@@ -53,6 +53,15 @@ export const findMyBookings = asyncHandler(async (req, res) => {
 export const findOne = asyncHandler(async (req, res) => {
   const booking = await fetchBookingById(req.params.id);
 
+  // Ownership check — previously any authenticated user could fetch any
+  // booking by ID (an IDOR gap). Only the booking's owner or an admin
+  // may view it.
+  if (booking.userId !== req.user.id && req.user.role !== "ADMIN") {
+    return res.status(403).json(
+      new ApiResponse(false, "You are not authorized to view this booking")
+    );
+  }
+
   return res.status(200).json(
     new ApiResponse(
       true,
